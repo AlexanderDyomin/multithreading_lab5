@@ -1,0 +1,22 @@
+version: "3"
+services:
+
+  my-hadoop-master:
+    image: dyomisasha96/hadoop-master
+    networks:
+      - "mynetwork"
+    ports:
+#      - "50070:50070"
+#      - "8088:8088"
+      - "7788:8080"
+  slave1:
+    image: dyomisasha96/hadoop-master
+    networks:
+      - "mynetwork"
+  slave2:
+    image: dyomisasha96/hadoop-master
+    networks:
+      - "mynetwork"
+
+networks:
+  mynetwork:
