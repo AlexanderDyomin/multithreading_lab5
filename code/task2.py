@@ -25,6 +25,12 @@ def save_frames(**kwargs):
     for k in kwargs:
         kwargs[k].write.mode('overwrite').json(hdfs(k))
 
+def errors500(n):
+    return int(n.code) in range(500, 600)
+
+def mapping(n):
+    return (n.method + " " + n.request, 1)
+
 # Sufficient pattern:
 PATTERN     = '^(?P<host>\S+) - - \[(?P<datetime>.+)\] "((?P<method>\w+)\s+)?(?P<request>.+)" (?P<code>\d+) (?P<bytes>[\d\-]+)$'
 log_pattern = re.compile(PATTERN)
@@ -33,6 +39,8 @@ url = 'hdfs://%s:%d' % (hdfs_host, hdfs_port)
 sc  = SparkContext()
 
 # Errors
-error = logs().filter(lambda v: int(v.code) in range(500,600))
+error = logs().filter(errors500)\
+    .map(mapping).groupByKey()\
+    .mapValues(len)
 
 save_frames(errors=create_frame(error))

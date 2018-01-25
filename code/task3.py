@@ -27,7 +27,7 @@ def save_frames(**kwargs):
 
 # Time series
 def date_request(r):
-    return Row(r.datetime[:11], "%s %s" % (r.method, r.code))
+    return Row((r.datetime[:11], "%s %s" % (r.method, r.code)), 1)
 
 def request_counter(requests):
     result = {}
@@ -44,6 +44,12 @@ def filter_requests(requests):
             result[k] = requests[k]
     return result
 
+def finalGroup(n):
+    return Row(n[0][0], (n[0][1], n[1]))
+
+def greater10(n):
+    return n[1] >= 10
+
 # Sufficient pattern:
 PATTERN     = '^(?P<host>\S+) - - \[(?P<datetime>.+)\] "((?P<method>\w+)\s+)?(?P<request>.+)" (?P<code>\d+) (?P<bytes>[\d\-]+)$'
 log_pattern = re.compile(PATTERN)
@@ -52,9 +58,7 @@ url = 'hdfs://%s:%d' % (hdfs_host, hdfs_port)
 sc  = SparkContext()
 
 dated = logs().map(date_request)\
-    .groupByKey()\
-    .mapValues(list)\
-    .mapValues(request_counter)\
-    .mapValues(filter_requests)
+    .groupByKey().mapValues(len).filter(greater10)\
+    .map(finalGroup).groupByKey().mapValues(list)
 
 save_frames(dates=create_frame(dated))
